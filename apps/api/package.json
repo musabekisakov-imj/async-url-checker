@@ -11,6 +11,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@upstash/redis": "^1.38.2",
+    "@vercel/functions": "^3.9.3",
     "express": "^5.1.0"
   },
   "devDependencies": {

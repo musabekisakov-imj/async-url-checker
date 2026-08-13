@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "fluid": true,
+  "regions": ["fra1"],
+  "functions": {
+    "src/app.ts": {
+      "maxDuration": 300
+    }
+  }
+}

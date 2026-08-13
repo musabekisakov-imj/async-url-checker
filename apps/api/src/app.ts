@@ -1,5 +1,7 @@
 import express, { type Request, type Response } from 'express';
-import { JobService } from './job-service.js';
+import { createRuntimeJobService, JobService } from './job-service.js';
+
+const MAX_URLS_PER_JOB = 50;
 
 const isUrl = (value: unknown): value is string => {
   if (typeof value !== 'string') return false;
@@ -12,22 +14,25 @@ export function createApp(service = new JobService()) {
 
   app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
-  app.post('/api/jobs', (req: Request, res: Response) => {
+  app.post('/api/jobs', async (req: Request, res: Response) => {
     const urls = req.body?.urls;
-    if (!Array.isArray(urls) || urls.length === 0 || !urls.every(isUrl)) {
-      return res.status(400).json({ error: 'urls must be a non-empty array of valid http/https URLs' });
+    if (!Array.isArray(urls) || urls.length === 0 || urls.length > MAX_URLS_PER_JOB || !urls.every(isUrl)) {
+      return res.status(400).json({ error: `urls must contain 1-${MAX_URLS_PER_JOB} valid http/https URLs` });
     }
-    const job = service.create(urls);
+    const job = await service.create(urls);
     return res.status(201).json({ jobId: job.id });
   });
-  app.get('/api/jobs', (_req, res) => res.json(service.list()));
-  app.get('/api/jobs/:id', (req, res) => {
-    const job = service.detail(req.params.id);
+  app.get('/api/jobs', async (_req, res) => res.json(await service.list()));
+  app.get('/api/jobs/:id', async (req, res) => {
+    const job = await service.detail(req.params.id);
     return job ? res.json(job) : res.status(404).json({ error: 'Job not found' });
   });
-  app.delete('/api/jobs/:id', (req, res) => {
-    const job = service.cancel(req.params.id);
+  app.delete('/api/jobs/:id', async (req, res) => {
+    const job = await service.cancel(req.params.id);
     return job ? res.json(job) : res.status(404).json({ error: 'Job not found' });
   });
   return app;
 }
+
+const app = createApp(createRuntimeJobService());
+export default app;

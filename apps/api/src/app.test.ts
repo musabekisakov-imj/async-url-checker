@@ -6,7 +6,7 @@ import { JobService, type HeadRequest } from './job-service.js';
 const pause = (ms = 5) => new Promise((resolve) => setTimeout(resolve, ms));
 const settled = async (service: JobService, id: string) => {
   for (let attempt = 0; attempt < 100; attempt += 1) {
-    const job = service.get(id)!;
+    const job = (await service.get(id))!;
     if (['completed', 'cancelled', 'failed'].includes(job.status)) return job;
     await pause();
   }
@@ -36,6 +36,7 @@ describe('jobs API', () => {
   it('validates body and returns 404 for unknown jobs', async () => {
     const app = createApp(new JobService(async () => ({ status: 200 }), async () => {}, 100, () => 0));
     await request(app).post('/api/jobs').send({ urls: ['ftp://invalid.test'] }).expect(400);
+    await request(app).post('/api/jobs').send({ urls: Array.from({ length: 51 }, () => 'https://example.com') }).expect(400);
     await request(app).get('/api/jobs/missing').expect(404);
     await request(app).delete('/api/jobs/missing').expect(404);
   });
@@ -66,9 +67,9 @@ describe('jobs API', () => {
       await pause(2); active -= 1; return { status: 200 };
     };
     const service = new JobService(head, async () => {}, 100, () => 0);
-    const job = service.create(Array.from({ length: 12 }, (_, i) => `https://test${i}.dev`));
+    const job = await service.create(Array.from({ length: 12 }, (_, i) => `https://test${i}.dev`));
     await settled(service, job.id);
     expect(maxActive).toBe(5);
-    expect(service.list()[0]).toMatchObject({ totalUrls: 12, successCount: 12, errorCount: 0 });
+    expect((await service.list())[0]).toMatchObject({ totalUrls: 12, successCount: 12, errorCount: 0 });
   });
 });

@@ -14,6 +14,10 @@ const settled = async (service: JobService, id: string) => {
 };
 
 describe('jobs API', () => {
+  it('reports service health', async () => {
+    await request(createApp()).get('/health').expect(200, { status: 'ok' });
+  });
+
   it('creates, lists and returns completed URL statistics', async () => {
     const head: HeadRequest = async (url) => ({ status: url.includes('bad') ? 500 : 204 });
     const service = new JobService(head, async () => {}, 100, () => 0);

@@ -11,4 +11,7 @@ sources/
 .agents/
 .codex/
 tmp/
+output/
+.railway/
+.vercel/
 vite.config.*.timestamp-*

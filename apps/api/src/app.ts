@@ -10,6 +10,8 @@ export function createApp(service = new JobService()) {
   const app = express();
   app.use(express.json({ limit: '1mb' }));
 
+  app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
   app.post('/api/jobs', (req: Request, res: Response) => {
     const urls = req.body?.urls;
     if (!Array.isArray(urls) || urls.length === 0 || !urls.every(isUrl)) {
